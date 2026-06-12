@@ -1,0 +1,6 @@
+@Sistema_de_chamados_HostAddress = http://localhost:5012
+
+GET {{Sistema_de_chamados_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
