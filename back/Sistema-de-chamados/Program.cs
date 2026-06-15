@@ -1,6 +1,7 @@
 using Sistema_de_chamados.src.Infrastructure.Data.Context;
 using Sistema_de_chamados.src.Application.Interfaces;
 using Sistema_de_chamados.src.Infrastructure.Data.Repositories;
+using Sistema_de_chamados.src.Application.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -33,6 +34,13 @@ builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IChamadoRepository, ChamadoRepository>();
 builder.Services.AddScoped<IResponsavelRepository, ResponsavelRepository>();
 builder.Services.AddScoped<IAcompanhamentoRepository, AcompanhamentoRepository>();
+
+// Services - Dependency Injection
+builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<IChamadoService, ChamadoService>();
+builder.Services.AddScoped<IResponsavelService, ResponsavelService>();
+builder.Services.AddScoped<IAcompanhamentoService, AcompanhamentoService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
