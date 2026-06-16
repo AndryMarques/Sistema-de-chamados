@@ -19,10 +19,10 @@ builder.Services.AddControllers();
 // OpenAPI/Swagger
 builder.Services.AddOpenApi();
 
-// Entity Framework - SQL Server
+// Entity Framework - SQLite
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlite(connectionString));
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
