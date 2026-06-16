@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="Sistema-de-chamados/Sistema-de-chamados.csproj" />
+  <Project Path="Sistema-de-chamados.Tests/Sistema-de-chamados.Tests.csproj" />
 </Solution>

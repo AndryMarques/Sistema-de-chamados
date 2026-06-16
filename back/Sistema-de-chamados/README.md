@@ -1,106 +1,189 @@
-# Sistema de Controle de Chamados - Backend
+# Sistema de Controle de Chamados — Backend
 
-## 📋 Descrição
-Sistema de controle de chamados internos desenvolvido com **.NET 9**, **Entity Framework Core**, **Repository Pattern** e **JWT Authentication**.
+API REST para gerenciamento de chamados internos, desenvolvida com **.NET 9**, **Entity Framework Core**, **SQL Server** e autenticação via **JWT**.
 
-## 🏗️ Arquitetura
-- **API REST** com padrão MVC
-- **Entity Framework Core** para acesso a dados
-- **Repository Pattern** para abstração de dados
-- **Service Layer** para lógica de negócio
-- **JWT Authentication** para autenticação de usuários
-- **FluentValidation** para validação de entrada
-- **AutoMapper** para mapeamento de entidades
-- **SQL Server** como banco de dados
+---
 
-## 🚀 Pré-requisitos
-- .NET 9 SDK instalado
-- SQL Server (localdb ou instalado)
-- Visual Studio 2026 Community ou Superior (opcional)
+## Pré-requisitos
 
-## 📦 Instalação
+Antes de começar, certifique-se de ter instalado na sua máquina:
 
-### 1. Restaurar dependências
+| Ferramenta | Versão mínima | Download |
+|---|---|---|
+| .NET SDK | 9.0 | https://dotnet.microsoft.com/download/dotnet/9 |
+| SQL Server | 2019 ou LocalDB | https://www.microsoft.com/sql-server/sql-server-downloads |
+| Git | qualquer | https://git-scm.com |
+
+> **LocalDB** já vem instalado com o Visual Studio. Para verificar se está disponível, rode `sqllocaldb info` no terminal.
+
+---
+
+## Instalação passo a passo
+
+### 1. Clonar o repositório
+
+```bash
+git clone <url-do-repositorio>
+cd Sistema-de-chamados/back/Sistema-de-chamados
+```
+
+---
+
+### 2. Restaurar as dependências
+
 ```bash
 dotnet restore
 ```
 
-### 2. Configurar a connection string
-Editar `appsettings.json` com sua connection string do SQL Server:
-```json
-"ConnectionStrings": {
-	"DefaultConnection": "Server=seu-servidor;Database=SistemaChamamdos;Trusted_Connection=true;"
-}
+Esse comando baixa automaticamente todos os pacotes NuGet:
+
+- `Microsoft.EntityFrameworkCore.SqlServer` — ORM e driver do SQL Server
+- `Microsoft.AspNetCore.Authentication.JwtBearer` — autenticação JWT
+- `AutoMapper` — mapeamento entre entidades e DTOs
+- `FluentValidation` — validação de entrada
+- `BCrypt.Net-Next` — hash de senhas
+
+---
+
+### 3. Configurar as variáveis de ambiente
+
+Copie o arquivo de exemplo e preencha com os valores do seu ambiente:
+
+```bash
+cp .env.example .env
 ```
 
-### 3. Configurar JWT Secret
-Editar `appsettings.json` com uma chave secreta segura:
-```json
-"JwtSettings": {
-	"Secret": "sua-chave-secreta-muito-longa-e-segura",
-	"ExpirationMinutes": 60
-}
+Abra o `.env` e ajuste a connection string:
+
+```env
+# LocalDB (padrão — não precisa instalar nada além do SDK)
+ConnectionStrings__DefaultConnection=Server=(localdb)\mssqllocaldb;Database=SistemaChamamdos;Trusted_Connection=true;
+
+# SQL Server local com autenticação Windows
+# ConnectionStrings__DefaultConnection=Server=.\SQLEXPRESS;Database=SistemaChamamdos;Trusted_Connection=true;TrustServerCertificate=true;
+
+# SQL Server com usuário e senha
+# ConnectionStrings__DefaultConnection=Server=localhost;Database=SistemaChamamdos;User Id=sa;Password=sua_senha;TrustServerCertificate=true;
 ```
 
-### 4. Criar e aplicar migrações
+> O arquivo `.env` é ignorado pelo Git. **Nunca commite credenciais reais no repositório.**
+
+---
+
+### 4. Configurar o JWT Secret
+
+No mesmo `.env`, defina uma chave secreta com **no mínimo 32 caracteres**:
+
+```env
+JwtSettings__Secret=troque-por-uma-chave-muito-segura-de-32-chars-ou-mais
+JwtSettings__ExpirationMinutes=60
+```
+
+> O duplo underscore (`__`) é a convenção do ASP.NET Core para mapear variáveis de ambiente para seções de configuração: `JwtSettings__Secret` → `JwtSettings:Secret`.
+
+---
+
+### 5. Instalar a ferramenta do Entity Framework
+
+Se ainda não tiver o `dotnet-ef` instalado globalmente:
+
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+Para verificar se já está instalado:
+
+```bash
+dotnet ef --version
+```
+
+---
+
+### 6. Criar e aplicar as migrações do banco de dados
+
 ```bash
 dotnet ef migrations add InitialCreate
 dotnet ef database update
 ```
 
-### 5. Executar a aplicação
+- O primeiro comando gera os arquivos de migração com base nas entidades do projeto.
+- O segundo cria o banco de dados e todas as tabelas.
+
+> Se o banco `SistemaChamamdos` não existir, o EF o cria automaticamente.
+
+---
+
+### 7. Executar a aplicação
+
 ```bash
 dotnet run
 ```
 
-A API estará disponível em: `https://localhost:5001`
+A API ficará disponível em:
 
-## 📁 Estrutura do Projeto
-
+```text
+http://localhost:5000
+https://localhost:5001
 ```
+
+A documentação interativa (Swagger/OpenAPI) estará em:
+
+```text
+http://localhost:5000/openapi/v1.json
+```
+
+---
+
+## Executar os testes
+
+O projeto de testes está em `../Sistema-de-chamados.Tests`. Para rodá-los:
+
+```bash
+cd ../Sistema-de-chamados.Tests
+dotnet test
+```
+
+---
+
+## Estrutura do projeto
+
+```text
 src/
 ├── API/
-│   ├── Controllers/          # Controllers da API
-│   └── DTOs/                 # Data Transfer Objects
+│   ├── Controllers/       # Endpoints REST (Auth, Chamados, Usuários, Responsáveis, Acompanhamentos)
+│   └── DTOs/              # Objetos de entrada e saída da API
 ├── Application/
-│   ├── Services/             # Lógica de negócio
-│   ├── Interfaces/           # Interfaces dos serviços
-│   └── Validators/           # Validadores FluentValidation
-├── Infrastructure/
-│   ├── Data/
-│   │   ├── Context/          # DbContext
-│   │   └── Repositories/     # Repositórios
-│   └── Configurations/       # Configurações
-└── Domain/
-	├── Entities/             # Entidades de domínio
-	└── Enums/                # Enumerações
+│   ├── Interfaces/        # Contratos de repositórios e serviços
+│   ├── Services/          # Lógica de negócio
+│   └── Validators/        # Validadores FluentValidation
+├── Domain/
+│   ├── Entities/          # Entidades de domínio
+│   └── Enums/             # Enumerações (Status, Prioridade)
+└── Infrastructure/
+    ├── Data/
+    │   ├── Context/       # DbContext (AppDbContext)
+    │   └── Repositories/  # Implementações dos repositórios
+    └── Configurations/    # Configurações do EF (Fluent API)
 ```
 
-## 🔐 Autenticação JWT
-Todas as requisições à API devem incluir o token JWT no header:
-```
-Authorization: Bearer {seu-token-aqui}
-```
+---
 
-## 📝 Próximos Passos
-- [ ] Step 2: Modelagem de Dados (concluído com Step 1)
-- [ ] Step 3: Contexto do Entity Framework (concluído com Step 1)
-- [ ] Step 4: Camada de Repositório
-- [ ] Step 5: Camada de Serviços
-- [ ] Step 6: Controllers/Endpoints
-- [ ] Step 7: Testes Unitários
-- [ ] Step 8: Documentação
+## Variáveis de configuração
 
-## 📚 Dependências Principais
-- Microsoft.EntityFrameworkCore 9.0.0
-- Microsoft.EntityFrameworkCore.SqlServer 9.0.0
-- AutoMapper 12.0.1
-- FluentValidation 11.10.0
-- System.IdentityModel.Tokens.Jwt 8.1.0
-- Microsoft.AspNetCore.Authentication.JwtBearer 9.0.0
+Todas as configurações ficam no arquivo `.env` (criado a partir de `.env.example`):
 
-## 🤝 Contribuindo
-Siga os padrões de código estabelecidos e sempre adicione testes para novas funcionalidades.
+| Chave | Descrição | Padrão |
+|---|---|---|
+| `ConnectionStrings:DefaultConnection` | String de conexão com o SQL Server | LocalDB |
+| `JwtSettings:Secret` | Chave secreta para assinar os tokens JWT | *(trocar antes de usar)* |
+| `JwtSettings:ExpirationMinutes` | Tempo de expiração do token em minutos | `60` |
 
-## 📧 Contato
-Para dúvidas ou sugestões, abra uma issue no repositório.
+---
+
+## Decisões técnicas
+
+- **Repository Pattern + Unit of Work** — desacopla a lógica de negócio do ORM, facilitando testes unitários com mocks.
+- **JWT stateless** — sem sessão no servidor; o token carrega as informações necessárias.
+- **BCrypt** para hash de senhas — resistente a ataques de força bruta por ser computacionalmente caro por design.
+- **Distribuição automática de chamados** — ao criar um chamado sem responsável definido, o sistema atribui automaticamente ao responsável com menor número de chamados em aberto.
+- **Soft-delete implícito** — chamados só podem ser deletados quando estão com status `Fechado`; usuários com chamados em aberto também não podem ser removidos.
