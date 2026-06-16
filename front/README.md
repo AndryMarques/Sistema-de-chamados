@@ -1,155 +1,79 @@
-# Sistema de Controle de Chamados — Frontend
+# Frontend — Arquitetura e Decisões Técnicas
 
-Interface web para o sistema de gerenciamento de chamados internos, desenvolvida com **React 19**, **TypeScript**, **Tailwind CSS v4** e **Vite**.
+SPA do Sistema de Controle de Chamados, construída com **React 19**, **TypeScript**, **Tailwind CSS v4** e **Vite**.
 
-> O backend deve estar rodando antes de iniciar o frontend. Veja as instruções em [`back/Sistema-de-chamados/README.md`](../back/Sistema-de-chamados/README.md).
+> Para instruções de instalação e execução, consulte o [README raiz](../README.md).
 
 ---
 
-## Pré-requisitos
+## Stack
 
-| Ferramenta | Versão mínima | Download |
+| Tecnologia | Versão | Motivo da escolha |
 | --- | --- | --- |
-| Node.js | 18.0 | <https://nodejs.org> |
-| npm | 9.0 | incluído com o Node |
-| Git | qualquer | <https://git-scm.com> |
+| React 19 | 19 | Biblioteca de UI consolidada; hooks nativos eliminam a necessidade de gerenciadores de estado externos para estado local |
+| TypeScript | 6 | Tipos em tempo de compilação: DTOs do backend espelhados em interfaces TS evitam erros de integração |
+| Vite | 8 | Build e HMR muito mais rápidos que Webpack/CRA; proxy nativo para o backend durante o desenvolvimento |
+| Tailwind CSS v4 | 4 | Utilitário-first elimina CSS customizado; v4 sem arquivo de configuração, integrado diretamente via plugin Vite |
+| TanStack Query | 5 | Cache de servidor declarativo: queries com `staleTime`, invalidação automática após mutations, sem gerenciamento manual de `loading/error/data` |
+| React Hook Form + Zod | 7 + 4 | RHF evita re-renders por campo; Zod infere os tipos TypeScript do schema, eliminando duplicação entre validação e tipos |
+| Axios | 1 | Interceptor global no `axios.ts` injeta o token JWT em todas as requisições automaticamente |
+| Sonner | 2 | Toasts com API mínima (`toast.success`, `toast.error`), sem provider obrigatório no componente pai |
 
 ---
 
-## Instalação passo a passo
-
-### 1. Entrar na pasta do frontend
-
-```bash
-cd Sistema-de-chamados/front
-```
-
-### 2. Instalar as dependências
-
-```bash
-npm install
-```
-
-Pacotes principais instalados automaticamente:
-
-- `react` + `react-dom` — biblioteca de UI
-- `react-router-dom` — roteamento client-side
-- `@tanstack/react-query` — gerenciamento de estado do servidor
-- `react-hook-form` + `zod` — formulários com validação em schema
-- `axios` — cliente HTTP
-- `sonner` — notificações (toasts)
-- `tailwindcss` — estilização utilitária
-
-### 3. Configurar as variáveis de ambiente
-
-```bash
-cp .env.example .env
-```
-
-O arquivo `.env` deve conter a URL da API:
-
-```env
-VITE_API_URL=http://localhost:5012
-```
-
-Ajuste a porta caso o backend esteja em outro endereço.
-
-### 4. Iniciar o servidor de desenvolvimento
-
-```bash
-npm run dev
-```
-
-A aplicação ficará disponível em:
-
-```text
-http://localhost:5173
-```
-
----
-
-## Scripts disponíveis
-
-| Comando | Descrição |
-| --- | --- |
-| `npm run dev` | Inicia o servidor de desenvolvimento com hot reload |
-| `npm run build` | Gera o build de produção em `dist/` |
-| `npm run preview` | Pré-visualiza o build de produção localmente |
-| `npm run lint` | Verifica o código com ESLint |
-
----
-
-## Estrutura do projeto
+## Estrutura
 
 ```text
 src/
-├── api/                   # Funções de requisição HTTP por recurso
-│   ├── axios.ts           # Instância configurada do Axios (interceptors, baseURL)
+├── api/                   # Uma função por operação HTTP, tipada com os DTOs de types/index.ts
+│   ├── axios.ts           # Instância única com baseURL e interceptor de Authorization header
 │   ├── auth.ts
 │   ├── chamados.ts
 │   ├── usuarios.ts
 │   ├── responsaveis.ts
 │   └── acompanhamentos.ts
 ├── components/
-│   ├── Layout/            # Shell da aplicação (sidebar, header)
-│   └── ui/                # Componentes reutilizáveis (Spinner, ConfirmDialog)
+│   ├── Layout/            # Shell: sidebar fixa + área de conteúdo com Outlet
+│   └── ui/                # Spinner e ConfirmDialog — componentes sem lógica de negócio
 ├── context/
-│   └── AuthContext.tsx    # Estado global de autenticação + token JWT
+│   └── AuthContext.tsx    # Token JWT em memória (não em localStorage): mais seguro contra XSS
 ├── hooks/
-│   └── useToast.ts        # Wrapper do Sonner para toasts padronizados
-├── pages/
-│   ├── Login.tsx
-│   ├── Register.tsx
-│   ├── Dashboard.tsx
-│   ├── Chamados/
-│   │   ├── ChamadosList.tsx
-│   │   ├── ChamadoForm.tsx
-│   │   └── ChamadoDetail.tsx
-│   ├── Usuarios/
-│   │   └── UsuariosList.tsx
-│   └── Responsaveis/
-│       └── ResponsaveisList.tsx
+│   └── useToast.ts        # Wrapper tipado do Sonner para padronizar mensagens de erro e sucesso
+├── pages/                 # Uma pasta por domínio, um arquivo por página
 ├── routes/
-│   └── index.tsx          # Definição de rotas + ProtectedRoute
+│   └── index.tsx          # BrowserRouter + ProtectedRoute que redireciona para /login se sem token
 └── types/
-    └── index.ts           # Interfaces TypeScript e DTOs
+    └── index.ts           # Interfaces de entidades, DTOs de entrada/saída e enums de status/prioridade
 ```
 
 ---
 
-## Funcionalidades
+## Decisões técnicas
 
-### Autenticação
+### Token JWT em memória
 
-- Login com e-mail e senha
-- Cadastro de novo usuário com máscara de telefone
-- Token JWT armazenado em memória (via Context)
-- Redirecionamento automático para login em rotas protegidas
+O token é armazenado no estado do `AuthContext` (memória), não em `localStorage` nem `sessionStorage`. Isso elimina o vetor de ataque de XSS que leria o token via `document.cookie` ou `localStorage.getItem`. A desvantagem é que o token se perde ao recarregar a página — o usuário precisa fazer login novamente, o que é aceitável para um sistema interno.
 
-### Chamados
+### Camada de API isolada
 
-- Listagem com filtros por status
-- Criação com atribuição **automática** (menor carga) ou **manual** (escolha de responsável)
-- Detalhe com histórico de acompanhamentos
-- **Capturar**: qualquer usuário pode assumir um chamado e se tornar responsável
-- **Finalizar**: responsável escolhe entre *Resolvido* ou *Fechado* e registra justificativa
-- Exclusão apenas de chamados com status Fechado
+Cada arquivo em `src/api/` exporta funções puras que retornam `Promise<T>`. As páginas nunca chamam `axios` diretamente — sempre via essas funções. Isso centraliza a tratativa de erros e facilita a substituição do cliente HTTP sem tocar nas páginas.
 
-### Usuários
+### TanStack Query como camada de estado do servidor
 
-- Listagem, edição e exclusão
-- Campo de telefone com máscara `(XX) XXXXX-XXXX`
-- Feedback de erros da API (e-mail duplicado, formato inválido etc.)
+Não há Redux, Zustand ou Context para dados remotos. O TanStack Query gerencia o ciclo de vida das requisições: cache, revalidação, `isPending`, `isError`. Mutations chamam `queryClient.invalidateQueries` para refrescar dados afetados sem refetch manual.
 
-### Responsáveis
+### Máscara de telefone sem biblioteca
 
-- Listagem com carga de trabalho atual
-- Associação e remoção de responsáveis
+A função `maskTelefone` é uma função pura de string, implementada localmente. Bibliotecas de máscara adicionam peso e frequentemente têm atrito com React Hook Form. A integração com RHF é feita desestruturando `{ ref, onChange, ...rest }` do `register`, sobrescrevendo o `onChange` para aplicar a máscara antes de propagar o evento.
 
----
+### Captura automática de responsável
 
-## Variáveis de ambiente
+Quando um usuário captura um chamado e ainda não tem registro de responsável, a função `obterOuCriarResponsavel` (em `api/responsaveis.ts`) primeiro busca a lista e verifica se já existe um registro para o `usuarioId`. Se não existir, cria automaticamente antes de atribuir o chamado. Essa lógica vive no frontend para não exigir um endpoint novo no backend.
 
-| Variável | Descrição | Padrão |
-| --- | --- | --- |
-| `VITE_API_URL` | URL base da API backend | `http://localhost:5012` |
+### Validação de formulários em schema
+
+O Zod define o schema de cada formulário. O `zodResolver` do RHF conecta o schema ao formulário sem código imperativo de validação. Os tipos TypeScript dos dados do formulário são inferidos diretamente do schema com `z.infer<typeof schema>`, mantendo um único ponto de verdade.
+
+### Feedback de erros da API
+
+Erros da API são extraídos de forma defensiva: `response.data.message ?? response.data.title ?? Object.values(response.data.errors ?? {}).flat()[0] ?? mensagem_fallback`. Essa cadeia cobre os formatos de erro do ASP.NET Core (validação FluentValidation, `ProblemDetails` e erros customizados).
