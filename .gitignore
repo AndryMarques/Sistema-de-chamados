@@ -7,6 +7,11 @@
 *.sln.docstates
 *.suo
 *.db
+*.db-shm
+*.db-wal
+!back/Sistema-de-chamados/sistema-chamados.db
+!back/Sistema-de-chamados/sistema-chamados.db-shm
+!back/Sistema-de-chamados/sistema-chamados.db-wal
 
 # --- React / Node ---
 node_modules/

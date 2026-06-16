@@ -1,73 +1,155 @@
-# React + TypeScript + Vite
+# Sistema de Controle de Chamados — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface web para o sistema de gerenciamento de chamados internos, desenvolvida com **React 19**, **TypeScript**, **Tailwind CSS v4** e **Vite**.
 
-Currently, two official plugins are available:
+> O backend deve estar rodando antes de iniciar o frontend. Veja as instruções em [`back/Sistema-de-chamados/README.md`](../back/Sistema-de-chamados/README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## Pré-requisitos
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Ferramenta | Versão mínima | Download |
+| --- | --- | --- |
+| Node.js | 18.0 | <https://nodejs.org> |
+| npm | 9.0 | incluído com o Node |
+| Git | qualquer | <https://git-scm.com> |
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Instalação passo a passo
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 1. Entrar na pasta do frontend
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd Sistema-de-chamados/front
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Instalar as dependências
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
+
+Pacotes principais instalados automaticamente:
+
+- `react` + `react-dom` — biblioteca de UI
+- `react-router-dom` — roteamento client-side
+- `@tanstack/react-query` — gerenciamento de estado do servidor
+- `react-hook-form` + `zod` — formulários com validação em schema
+- `axios` — cliente HTTP
+- `sonner` — notificações (toasts)
+- `tailwindcss` — estilização utilitária
+
+### 3. Configurar as variáveis de ambiente
+
+```bash
+cp .env.example .env
+```
+
+O arquivo `.env` deve conter a URL da API:
+
+```env
+VITE_API_URL=http://localhost:5012
+```
+
+Ajuste a porta caso o backend esteja em outro endereço.
+
+### 4. Iniciar o servidor de desenvolvimento
+
+```bash
+npm run dev
+```
+
+A aplicação ficará disponível em:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Scripts disponíveis
+
+| Comando | Descrição |
+| --- | --- |
+| `npm run dev` | Inicia o servidor de desenvolvimento com hot reload |
+| `npm run build` | Gera o build de produção em `dist/` |
+| `npm run preview` | Pré-visualiza o build de produção localmente |
+| `npm run lint` | Verifica o código com ESLint |
+
+---
+
+## Estrutura do projeto
+
+```text
+src/
+├── api/                   # Funções de requisição HTTP por recurso
+│   ├── axios.ts           # Instância configurada do Axios (interceptors, baseURL)
+│   ├── auth.ts
+│   ├── chamados.ts
+│   ├── usuarios.ts
+│   ├── responsaveis.ts
+│   └── acompanhamentos.ts
+├── components/
+│   ├── Layout/            # Shell da aplicação (sidebar, header)
+│   └── ui/                # Componentes reutilizáveis (Spinner, ConfirmDialog)
+├── context/
+│   └── AuthContext.tsx    # Estado global de autenticação + token JWT
+├── hooks/
+│   └── useToast.ts        # Wrapper do Sonner para toasts padronizados
+├── pages/
+│   ├── Login.tsx
+│   ├── Register.tsx
+│   ├── Dashboard.tsx
+│   ├── Chamados/
+│   │   ├── ChamadosList.tsx
+│   │   ├── ChamadoForm.tsx
+│   │   └── ChamadoDetail.tsx
+│   ├── Usuarios/
+│   │   └── UsuariosList.tsx
+│   └── Responsaveis/
+│       └── ResponsaveisList.tsx
+├── routes/
+│   └── index.tsx          # Definição de rotas + ProtectedRoute
+└── types/
+    └── index.ts           # Interfaces TypeScript e DTOs
+```
+
+---
+
+## Funcionalidades
+
+### Autenticação
+
+- Login com e-mail e senha
+- Cadastro de novo usuário com máscara de telefone
+- Token JWT armazenado em memória (via Context)
+- Redirecionamento automático para login em rotas protegidas
+
+### Chamados
+
+- Listagem com filtros por status
+- Criação com atribuição **automática** (menor carga) ou **manual** (escolha de responsável)
+- Detalhe com histórico de acompanhamentos
+- **Capturar**: qualquer usuário pode assumir um chamado e se tornar responsável
+- **Finalizar**: responsável escolhe entre *Resolvido* ou *Fechado* e registra justificativa
+- Exclusão apenas de chamados com status Fechado
+
+### Usuários
+
+- Listagem, edição e exclusão
+- Campo de telefone com máscara `(XX) XXXXX-XXXX`
+- Feedback de erros da API (e-mail duplicado, formato inválido etc.)
+
+### Responsáveis
+
+- Listagem com carga de trabalho atual
+- Associação e remoção de responsáveis
+
+---
+
+## Variáveis de ambiente
+
+| Variável | Descrição | Padrão |
+| --- | --- | --- |
+| `VITE_API_URL` | URL base da API backend | `http://localhost:5012` |

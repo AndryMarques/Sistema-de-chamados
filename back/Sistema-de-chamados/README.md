@@ -1,20 +1,19 @@
 # Sistema de Controle de Chamados — Backend
 
-API REST para gerenciamento de chamados internos, desenvolvida com **.NET 9**, **Entity Framework Core**, **SQL Server** e autenticação via **JWT**.
+API REST para gerenciamento de chamados internos, desenvolvida com **.NET 9**, **Entity Framework Core 9**, **SQLite** e autenticação via **JWT**.
+
+> O banco de dados SQLite já está incluído no repositório com dados de exemplo — não é necessário rodar migrações nem popular o banco manualmente.
 
 ---
 
 ## Pré-requisitos
 
-Antes de começar, certifique-se de ter instalado na sua máquina:
-
 | Ferramenta | Versão mínima | Download |
 |---|---|---|
 | .NET SDK | 9.0 | https://dotnet.microsoft.com/download/dotnet/9 |
-| SQL Server | 2019 ou LocalDB | https://www.microsoft.com/sql-server/sql-server-downloads |
 | Git | qualquer | https://git-scm.com |
 
-> **LocalDB** já vem instalado com o Visual Studio. Para verificar se está disponível, rode `sqllocaldb info` no terminal.
+Nenhum servidor de banco de dados precisa ser instalado.
 
 ---
 
@@ -27,93 +26,37 @@ git clone <url-do-repositorio>
 cd Sistema-de-chamados/back/Sistema-de-chamados
 ```
 
----
-
 ### 2. Restaurar as dependências
 
 ```bash
 dotnet restore
 ```
 
-Esse comando baixa automaticamente todos os pacotes NuGet:
+Pacotes instalados automaticamente:
 
-- `Microsoft.EntityFrameworkCore.SqlServer` — ORM e driver do SQL Server
+- `Microsoft.EntityFrameworkCore.Sqlite` — ORM e driver SQLite
 - `Microsoft.AspNetCore.Authentication.JwtBearer` — autenticação JWT
 - `AutoMapper` — mapeamento entre entidades e DTOs
 - `FluentValidation` — validação de entrada
 - `BCrypt.Net-Next` — hash de senhas
 
----
-
 ### 3. Configurar as variáveis de ambiente
-
-Copie o arquivo de exemplo e preencha com os valores do seu ambiente:
 
 ```bash
 cp .env.example .env
 ```
 
-Abra o `.env` e ajuste a connection string:
+O `.env.example` já contém a connection string correta para SQLite. Troque apenas o `JwtSettings__Secret`:
 
 ```env
-# LocalDB (padrão — não precisa instalar nada além do SDK)
-ConnectionStrings__DefaultConnection=Server=(localdb)\mssqllocaldb;Database=SistemaChamamdos;Trusted_Connection=true;
-
-# SQL Server local com autenticação Windows
-# ConnectionStrings__DefaultConnection=Server=.\SQLEXPRESS;Database=SistemaChamamdos;Trusted_Connection=true;TrustServerCertificate=true;
-
-# SQL Server com usuário e senha
-# ConnectionStrings__DefaultConnection=Server=localhost;Database=SistemaChamamdos;User Id=sa;Password=sua_senha;TrustServerCertificate=true;
-```
-
-> O arquivo `.env` é ignorado pelo Git. **Nunca commite credenciais reais no repositório.**
-
----
-
-### 4. Configurar o JWT Secret
-
-No mesmo `.env`, defina uma chave secreta com **no mínimo 32 caracteres**:
-
-```env
-JwtSettings__Secret=troque-por-uma-chave-muito-segura-de-32-chars-ou-mais
+ConnectionStrings__DefaultConnection=Data Source=sistema-chamados.db
+JwtSettings__Secret=troque-por-uma-chave-segura-de-32-chars-ou-mais
 JwtSettings__ExpirationMinutes=60
 ```
 
-> O duplo underscore (`__`) é a convenção do ASP.NET Core para mapear variáveis de ambiente para seções de configuração: `JwtSettings__Secret` → `JwtSettings:Secret`.
+> O duplo underscore (`__`) mapeia variáveis de ambiente para seções de configuração do ASP.NET Core: `JwtSettings__Secret` → `JwtSettings:Secret`.
 
----
-
-### 5. Instalar a ferramenta do Entity Framework
-
-Se ainda não tiver o `dotnet-ef` instalado globalmente:
-
-```bash
-dotnet tool install --global dotnet-ef
-```
-
-Para verificar se já está instalado:
-
-```bash
-dotnet ef --version
-```
-
----
-
-### 6. Criar e aplicar as migrações do banco de dados
-
-```bash
-dotnet ef migrations add InitialCreate
-dotnet ef database update
-```
-
-- O primeiro comando gera os arquivos de migração com base nas entidades do projeto.
-- O segundo cria o banco de dados e todas as tabelas.
-
-> Se o banco `SistemaChamamdos` não existir, o EF o cria automaticamente.
-
----
-
-### 7. Executar a aplicação
+### 4. Executar a aplicação
 
 ```bash
 dotnet run
@@ -126,23 +69,29 @@ http://localhost:5012
 https://localhost:7122
 ```
 
-A documentação interativa (Scalar UI) estará em:
+A documentação interativa (Scalar UI):
 
 ```text
 http://localhost:5012/scalar/v1
 ```
 
-O JSON bruto do OpenAPI estará em:
+---
 
-```text
-http://localhost:5012/openapi/v1.json
-```
+## Banco de dados incluído
+
+O arquivo `sistema-chamados.db` está versionado com dados de exemplo prontos para uso:
+
+| Entidade | Dados de exemplo |
+| --- | --- |
+| Usuários | 1 usuário administrador cadastrado |
+| Responsáveis | 1 responsável vinculado ao usuário |
+| Chamados | Chamados de teste em diferentes status |
+
+> Para recriar o banco do zero: delete `sistema-chamados.db`, instale `dotnet-ef` (`dotnet tool install --global dotnet-ef`) e rode `dotnet ef database update`.
 
 ---
 
 ## Executar os testes
-
-O projeto de testes está em `../Sistema-de-chamados.Tests`. Para rodá-los:
 
 ```bash
 cd ../Sistema-de-chamados.Tests
@@ -176,20 +125,19 @@ src/
 
 ## Variáveis de configuração
 
-Todas as configurações ficam no arquivo `.env` (criado a partir de `.env.example`):
-
 | Chave | Descrição | Padrão |
-|---|---|---|
-| `ConnectionStrings:DefaultConnection` | String de conexão com o SQL Server | LocalDB |
-| `JwtSettings:Secret` | Chave secreta para assinar os tokens JWT | *(trocar antes de usar)* |
-| `JwtSettings:ExpirationMinutes` | Tempo de expiração do token em minutos | `60` |
+| --- | --- | --- |
+| `ConnectionStrings__DefaultConnection` | Caminho do arquivo SQLite | `Data Source=sistema-chamados.db` |
+| `JwtSettings__Secret` | Chave secreta para assinar tokens JWT | *(trocar antes de usar)* |
+| `JwtSettings__ExpirationMinutes` | Expiração do token em minutos | `60` |
 
 ---
 
 ## Decisões técnicas
 
+- **SQLite** — banco embutido, zero instalação, ideal para desenvolvimento e demonstração.
 - **Repository Pattern + Unit of Work** — desacopla a lógica de negócio do ORM, facilitando testes unitários com mocks.
 - **JWT stateless** — sem sessão no servidor; o token carrega as informações necessárias.
 - **BCrypt** para hash de senhas — resistente a ataques de força bruta por ser computacionalmente caro por design.
-- **Distribuição automática de chamados** — ao criar um chamado sem responsável definido, o sistema atribui automaticamente ao responsável com menor número de chamados em aberto.
-- **Soft-delete implícito** — chamados só podem ser deletados quando estão com status `Fechado`; usuários com chamados em aberto também não podem ser removidos.
+- **Distribuição automática de chamados** — ao criar um chamado, o sistema pode atribuir automaticamente ao responsável com menor carga ou permitir seleção manual.
+- **Soft-delete implícito** — chamados só podem ser deletados quando estão com status `Fechado`; responsáveis com chamados em aberto também não podem ser removidos.
