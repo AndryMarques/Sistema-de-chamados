@@ -34,14 +34,26 @@ namespace Sistema_de_chamados.src.Application.Services
                 chamado.Status = ChamadoStatus.Aberto;
                 chamado.DataAbertura = DateTime.UtcNow;
 
-                // Atribuir automaticamente ao responsável com menor carga
-                var responsavelMenorCarga = await _unitOfWork.Responsaveis.ObterResponsavelComMenorCargaAsync();
+                // Atribuir ao responsável indicado ou ao de menor carga
+                Responsavel? responsavelAtribuido = null;
 
-                if (responsavelMenorCarga != null)
+                if (chamadoCriarDTO.ResponsavelId.HasValue)
                 {
-                    chamado.ResponsavelId = responsavelMenorCarga.Id;
-                    responsavelMenorCarga.ChamadosEmAberto++;
-                    _unitOfWork.Responsaveis.Atualizar(responsavelMenorCarga);
+                    responsavelAtribuido = await _unitOfWork.Responsaveis.ObterPorIdAsync(chamadoCriarDTO.ResponsavelId.Value);
+
+                    if (responsavelAtribuido == null)
+                        throw new InvalidOperationException($"Responsável com ID {chamadoCriarDTO.ResponsavelId.Value} não encontrado");
+                }
+                else
+                {
+                    responsavelAtribuido = await _unitOfWork.Responsaveis.ObterResponsavelComMenorCargaAsync();
+                }
+
+                if (responsavelAtribuido != null)
+                {
+                    chamado.ResponsavelId = responsavelAtribuido.Id;
+                    responsavelAtribuido.ChamadosEmAberto++;
+                    _unitOfWork.Responsaveis.Atualizar(responsavelAtribuido);
                 }
 
                 // Adicionar ao banco

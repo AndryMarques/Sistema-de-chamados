@@ -21,6 +21,10 @@ namespace Sistema_de_chamados.src.Application.Validators
 
             RuleFor(x => x.UsuarioId)
                 .GreaterThan(0).WithMessage("UsuarioId deve ser maior que 0");
+
+            RuleFor(x => x.ResponsavelId)
+                .GreaterThan(0).WithMessage("ResponsavelId inválido")
+                .When(x => x.ResponsavelId.HasValue);
         }
     }
 }

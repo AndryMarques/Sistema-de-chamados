@@ -21,7 +21,7 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
             return await _dbSet.FindAsync(id);
         }
 
-        public async Task<IEnumerable<T>> ObterTodosAsync()
+        public virtual async Task<IEnumerable<T>> ObterTodosAsync()
         {
             return await _dbSet.ToListAsync();
         }

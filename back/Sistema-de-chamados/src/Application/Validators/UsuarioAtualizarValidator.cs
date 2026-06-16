@@ -21,7 +21,7 @@ namespace Sistema_de_chamados.src.Application.Validators
                 .MaximumLength(100).WithMessage("Email deve ter no máximo 100 caracteres");
 
             RuleFor(x => x.Telefone)
-                .Matches(@"^\d{10,11}$").WithMessage("Telefone deve ter 10 ou 11 dígitos")
+                .MaximumLength(20).WithMessage("Telefone deve ter no máximo 20 caracteres")
                 .When(x => !string.IsNullOrEmpty(x.Telefone));
         }
     }

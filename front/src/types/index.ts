@@ -74,6 +74,7 @@ export interface ChamadoCriarDTO {
   descricao: string
   prioridade: number
   usuarioId: number
+  responsavelId?: number
 }
 
 export interface ChamadoAtualizarDTO {

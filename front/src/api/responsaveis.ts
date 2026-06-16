@@ -10,6 +10,13 @@ export const getResponsavel = (id: number) =>
 export const criarResponsavel = (data: ResponsavelCriarDTO) =>
   api.post<Responsavel>('/responsaveis', data).then((r) => r.data)
 
+export const obterOuCriarResponsavel = async (usuarioId: number): Promise<Responsavel> => {
+  const lista = await getResponsaveis()
+  const existente = lista.find((r) => r.usuarioId === usuarioId)
+  if (existente) return existente
+  return criarResponsavel({ usuarioId })
+}
+
 export const deletarResponsavel = (id: number) =>
   api.delete(`/responsaveis/${id}`)
 

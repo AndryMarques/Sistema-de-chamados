@@ -25,7 +25,7 @@ namespace Sistema_de_chamados.src.Application.Validators
                 .Matches(@"[0-9]").WithMessage("Senha deve conter pelo menos um número");
 
             RuleFor(x => x.Telefone)
-                .Matches(@"^\d{10,11}$").WithMessage("Telefone deve ter 10 ou 11 dígitos")
+                .MaximumLength(20).WithMessage("Telefone deve ter no máximo 20 caracteres")
                 .When(x => !string.IsNullOrEmpty(x.Telefone));
         }
     }

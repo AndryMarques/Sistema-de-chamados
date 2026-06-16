@@ -12,12 +12,24 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
         {
         }
 
+        public override async Task<IEnumerable<Chamado>> ObterTodosAsync()
+        {
+            return await _dbSet
+                .Include(c => c.Usuario)
+                .Include(c => c.Responsavel)
+                    .ThenInclude(r => r!.Usuario)
+                .ToListAsync();
+        }
+
         public async Task<Chamado?> ObterComAcompanhamentosAsync(int id)
         {
             return await _dbSet
                 .Include(c => c.Usuario)
                 .Include(c => c.Responsavel)
+                    .ThenInclude(r => r!.Usuario)
                 .Include(c => c.Acompanhamentos)
+                    .ThenInclude(a => a.Responsavel)
+                        .ThenInclude(r => r!.Usuario)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
@@ -26,6 +38,7 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
             return await _dbSet
                 .Include(c => c.Usuario)
                 .Include(c => c.Responsavel)
+                    .ThenInclude(r => r!.Usuario)
                 .Where(c => c.Status == status)
                 .ToListAsync();
         }
@@ -35,6 +48,7 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
             return await _dbSet
                 .Include(c => c.Usuario)
                 .Include(c => c.Responsavel)
+                    .ThenInclude(r => r!.Usuario)
                 .Where(c => c.Prioridade == prioridade)
                 .ToListAsync();
         }
@@ -44,6 +58,7 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
             return await _dbSet
                 .Include(c => c.Usuario)
                 .Include(c => c.Responsavel)
+                    .ThenInclude(r => r!.Usuario)
                 .Where(c => c.ResponsavelId == responsavelId)
                 .ToListAsync();
         }
@@ -53,6 +68,7 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
             return await _dbSet
                 .Include(c => c.Usuario)
                 .Include(c => c.Responsavel)
+                    .ThenInclude(r => r!.Usuario)
                 .Where(c => c.UsuarioId == usuarioId)
                 .ToListAsync();
         }
@@ -62,6 +78,7 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
             var query = _dbSet
                 .Include(c => c.Usuario)
                 .Include(c => c.Responsavel)
+                    .ThenInclude(r => r!.Usuario)
                 .AsQueryable();
 
             if (status.HasValue)
@@ -76,7 +93,7 @@ namespace Sistema_de_chamados.src.Infrastructure.Data.Repositories
         public async Task<int> ContarChamadosAbertosPorResponsavelAsync(int responsavelId)
         {
             return await _dbSet
-                .Where(c => c.ResponsavelId == responsavelId && 
+                .Where(c => c.ResponsavelId == responsavelId &&
                            (c.Status == ChamadoStatus.Aberto || c.Status == ChamadoStatus.EmAndamento))
                 .CountAsync();
         }

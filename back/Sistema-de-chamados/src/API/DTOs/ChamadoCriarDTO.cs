@@ -8,5 +8,6 @@ namespace Sistema_de_chamados.src.API.DTOs
         public string Descricao { get; set; } = string.Empty;
         public ChamadoPrioridade Prioridade { get; set; } = ChamadoPrioridade.Media;
         public int UsuarioId { get; set; }
+        public int? ResponsavelId { get; set; }
     }
 }
