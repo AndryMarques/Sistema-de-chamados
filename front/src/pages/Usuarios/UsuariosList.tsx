@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getUsuarios, atualizarUsuario, deletarUsuario } from '../../api/usuarios'
+import { useToast } from '../../hooks/useToast'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import Spinner from '../../components/ui/Spinner'
 import type { Usuario } from '../../types'
 
 export default function UsuariosList() {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [editando, setEditando] = useState<Usuario | null>(null)
+  const [confirmarDelete, setConfirmarDelete] = useState<number | null>(null)
 
-  const { data: usuarios = [], isLoading } = useQuery({
+  const { data: usuarios = [], isLoading, isError } = useQuery({
     queryKey: ['usuarios'],
     queryFn: getUsuarios,
   })
@@ -17,15 +22,22 @@ export default function UsuariosList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['usuarios'] })
       setEditando(null)
+      toast.success('Usuário atualizado.')
     },
+    onError: (err) => toast.error(err, 'Erro ao atualizar usuário.'),
   })
 
   const deletar = useMutation({
     mutationFn: deletarUsuario,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['usuarios'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['usuarios'] })
+      toast.success('Usuário excluído.')
+    },
+    onError: (err) => toast.error(err, 'Não foi possível excluir o usuário.'),
   })
 
-  if (isLoading) return <div className="text-gray-500 text-sm">Carregando...</div>
+  if (isLoading) return <Spinner />
+  if (isError) return <p className="text-sm text-red-600">Erro ao carregar usuários.</p>
 
   return (
     <div className="space-y-6">
@@ -57,13 +69,22 @@ export default function UsuariosList() {
                 <td className="px-6 py-4 text-gray-400">{new Date(u.dataCriacao).toLocaleDateString('pt-BR')}</td>
                 <td className="px-6 py-4 flex gap-3">
                   <button onClick={() => setEditando({ ...u })} className="text-xs text-blue-600 hover:text-blue-700">Editar</button>
-                  <button onClick={() => deletar.mutate(u.id)} className="text-xs text-red-600 hover:text-red-700">Excluir</button>
+                  <button onClick={() => setConfirmarDelete(u.id)} className="text-xs text-red-600 hover:text-red-700">Excluir</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmarDelete !== null}
+        title="Excluir usuário"
+        message="Esta ação não pode ser desfeita. Deseja excluir este usuário?"
+        confirmLabel="Excluir"
+        onConfirm={() => { deletar.mutate(confirmarDelete!); setConfirmarDelete(null) }}
+        onCancel={() => setConfirmarDelete(null)}
+      />
 
       {/* Modal de edição inline */}
       {editando && (

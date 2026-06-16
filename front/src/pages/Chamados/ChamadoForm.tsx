@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { criarChamado } from '../../api/chamados'
 import { useAuth } from '../../context/AuthContext'
+import { useToast } from '../../hooks/useToast'
 
 const schema = z.object({
   titulo: z.string().min(3, 'Título obrigatório'),
@@ -17,6 +18,7 @@ export default function ChamadoForm() {
   const { usuario } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const toast = useToast()
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -28,8 +30,10 @@ export default function ChamadoForm() {
       criarChamado({ ...data, usuarioId: usuario!.id }),
     onSuccess: (chamado) => {
       queryClient.invalidateQueries({ queryKey: ['chamados'] })
+      toast.success('Chamado criado e atribuído automaticamente.')
       navigate(`/chamados/${chamado.id}`)
     },
+    onError: (err) => toast.error(err, 'Erro ao criar chamado.'),
   })
 
   const onSubmit = (data: FormData) => criar.mutate(data)
@@ -67,9 +71,7 @@ export default function ChamadoForm() {
               <option value={3}>Alta</option>
             </select>
           </div>
-          {criar.isError && (
-            <p className="text-sm text-red-600">Erro ao criar chamado.</p>
-          )}
+
           <div className="flex gap-3 pt-2">
             <button
               type="button"

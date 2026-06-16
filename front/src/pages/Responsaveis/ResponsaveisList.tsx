@@ -2,12 +2,17 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getResponsaveis, criarResponsavel, deletarResponsavel } from '../../api/responsaveis'
 import { getUsuarios } from '../../api/usuarios'
+import { useToast } from '../../hooks/useToast'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import Spinner from '../../components/ui/Spinner'
 
 export default function ResponsaveisList() {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [usuarioIdSelecionado, setUsuarioIdSelecionado] = useState<number | ''>('')
+  const [confirmarDelete, setConfirmarDelete] = useState<number | null>(null)
 
-  const { data: responsaveis = [], isLoading } = useQuery({
+  const { data: responsaveis = [], isLoading, isError } = useQuery({
     queryKey: ['responsaveis'],
     queryFn: getResponsaveis,
   })
@@ -22,19 +27,26 @@ export default function ResponsaveisList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['responsaveis'] })
       setUsuarioIdSelecionado('')
+      toast.success('Usuário promovido a responsável.')
     },
+    onError: (err) => toast.error(err, 'Erro ao promover usuário.'),
   })
 
   const deletar = useMutation({
     mutationFn: deletarResponsavel,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['responsaveis'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['responsaveis'] })
+      toast.success('Responsável removido.')
+    },
+    onError: (err) => toast.error(err, 'Não foi possível remover o responsável.'),
   })
 
   const usuariosDisponiveis = usuarios.filter(
     (u) => !responsaveis.some((r) => r.usuarioId === u.id)
   )
 
-  if (isLoading) return <div className="text-gray-500 text-sm">Carregando...</div>
+  if (isLoading) return <Spinner />
+  if (isError) return <p className="text-sm text-red-600">Erro ao carregar responsáveis.</p>
 
   return (
     <div className="space-y-6">
@@ -62,7 +74,6 @@ export default function ResponsaveisList() {
             {criar.isPending ? 'Promovendo...' : 'Promover'}
           </button>
         </div>
-        {criar.isError && <p className="mt-2 text-xs text-red-600">Erro ao promover usuário.</p>}
       </div>
 
       {/* Lista de responsáveis */}
@@ -95,7 +106,7 @@ export default function ResponsaveisList() {
                   <td className="px-6 py-4 text-gray-400">{new Date(r.dataAssociacao).toLocaleDateString('pt-BR')}</td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => deletar.mutate(r.id)}
+                      onClick={() => setConfirmarDelete(r.id)}
                       disabled={r.chamadosEmAberto > 0}
                       className="text-xs text-red-600 hover:text-red-700 disabled:opacity-30 disabled:cursor-not-allowed"
                       title={r.chamadosEmAberto > 0 ? 'Possui chamados em aberto' : 'Remover responsável'}
@@ -109,6 +120,14 @@ export default function ResponsaveisList() {
           </tbody>
         </table>
       </div>
+      <ConfirmDialog
+        isOpen={confirmarDelete !== null}
+        title="Remover responsável"
+        message="Deseja remover este responsável? Ele não poderá mais receber chamados."
+        confirmLabel="Remover"
+        onConfirm={() => { deletar.mutate(confirmarDelete!); setConfirmarDelete(null) }}
+        onCancel={() => setConfirmarDelete(null)}
+      />
     </div>
   )
 }

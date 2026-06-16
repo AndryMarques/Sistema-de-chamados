@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { getChamados, deletarChamado } from '../../api/chamados'
 import { ChamadoStatus, ChamadoPrioridade } from '../../types'
+import { useToast } from '../../hooks/useToast'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import Spinner from '../../components/ui/Spinner'
 
 const statusColors: Record<number, string> = {
   1: 'bg-blue-100 text-blue-800',
@@ -20,21 +23,28 @@ const prioridadeColors: Record<number, string> = {
 
 export default function ChamadosList() {
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [filtroStatus, setFiltroStatus] = useState<number | ''>('')
+  const [confirmarDelete, setConfirmarDelete] = useState<number | null>(null)
 
-  const { data: chamados = [], isLoading } = useQuery({
+  const { data: chamados = [], isLoading, isError } = useQuery({
     queryKey: ['chamados'],
     queryFn: getChamados,
   })
 
   const deletar = useMutation({
     mutationFn: deletarChamado,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chamados'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chamados'] })
+      toast.success('Chamado excluído.')
+    },
+    onError: (err) => toast.error(err, 'Erro ao excluir chamado.'),
   })
 
   const lista = filtroStatus === '' ? chamados : chamados.filter((c) => c.status === filtroStatus)
 
-  if (isLoading) return <div className="text-gray-500 text-sm">Carregando...</div>
+  if (isLoading) return <Spinner />
+  if (isError) return <p className="text-sm text-red-600">Erro ao carregar chamados.</p>
 
   return (
     <div className="space-y-6">
@@ -107,7 +117,7 @@ export default function ChamadosList() {
                   <td className="px-6 py-4">
                     {c.status === 4 && (
                       <button
-                        onClick={() => deletar.mutate(c.id)}
+                        onClick={() => setConfirmarDelete(c.id)}
                         className="text-xs text-red-600 hover:text-red-700"
                       >
                         Excluir
@@ -120,6 +130,14 @@ export default function ChamadosList() {
           </table>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={confirmarDelete !== null}
+        title="Excluir chamado"
+        message="Esta ação não pode ser desfeita. Deseja excluir este chamado?"
+        confirmLabel="Excluir"
+        onConfirm={() => { deletar.mutate(confirmarDelete!); setConfirmarDelete(null) }}
+        onCancel={() => setConfirmarDelete(null)}
+      />
     </div>
   )
 }

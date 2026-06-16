@@ -9,6 +9,7 @@ import ChamadoDetail from '../pages/Chamados/ChamadoDetail'
 import ChamadoForm from '../pages/Chamados/ChamadoForm'
 import UsuariosList from '../pages/Usuarios/UsuariosList'
 import ResponsaveisList from '../pages/Responsaveis/ResponsaveisList'
+import NotFound from '../pages/NotFound'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -36,7 +37,7 @@ export default function AppRoutes() {
           <Route path="usuarios" element={<UsuariosList />} />
           <Route path="responsaveis" element={<ResponsaveisList />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   )

@@ -8,6 +8,9 @@ import { getChamado, atualizarChamado } from '../../api/chamados'
 import { criarAcompanhamento, deletarAcompanhamento } from '../../api/acompanhamentos'
 import { getResponsaveis } from '../../api/responsaveis'
 import { ChamadoStatus, ChamadoPrioridade } from '../../types'
+import { useToast } from '../../hooks/useToast'
+import ConfirmDialog from '../../components/ui/ConfirmDialog'
+import Spinner from '../../components/ui/Spinner'
 
 const statusColors: Record<number, string> = {
   1: 'bg-blue-100 text-blue-800',
@@ -27,9 +30,11 @@ export default function ChamadoDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const [editando, setEditando] = useState(false)
   const [novoStatus, setNovoStatus] = useState<number>(1)
   const [novoResponsavel, setNovoResponsavel] = useState<number | ''>('')
+  const [confirmarDeleteAcomp, setConfirmarDeleteAcomp] = useState<number | null>(null)
 
   const { data: chamado, isLoading } = useQuery({
     queryKey: ['chamado', id],
@@ -48,14 +53,16 @@ export default function ChamadoDetail() {
         titulo: chamado!.titulo,
         descricao: chamado!.descricao,
         prioridade: chamado!.prioridade,
-        status: novoStatus || chamado!.status,
+        status: novoStatus,
         responsavelId: novoResponsavel !== '' ? novoResponsavel : chamado!.responsavelId,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chamado', id] })
       queryClient.invalidateQueries({ queryKey: ['chamados'] })
       setEditando(false)
+      toast.success('Chamado atualizado com sucesso.')
     },
+    onError: (err) => toast.error(err, 'Erro ao atualizar chamado.'),
   })
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<AcompForm>({
@@ -68,16 +75,22 @@ export default function ChamadoDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chamado', id] })
       reset()
+      toast.success('Acompanhamento adicionado.')
     },
+    onError: (err) => toast.error(err, 'Erro ao adicionar acompanhamento.'),
   })
 
   const delAcomp = useMutation({
     mutationFn: deletarAcompanhamento,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['chamado', id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chamado', id] })
+      toast.success('Acompanhamento excluído.')
+    },
+    onError: (err) => toast.error(err, 'Erro ao excluir acompanhamento.'),
   })
 
-  if (isLoading) return <div className="text-gray-500 text-sm">Carregando...</div>
-  if (!chamado) return <div className="text-gray-500 text-sm">Chamado não encontrado.</div>
+  if (isLoading) return <Spinner />
+  if (!chamado) return <p className="text-sm text-red-600">Chamado não encontrado.</p>
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -189,7 +202,7 @@ export default function ChamadoDetail() {
                     <p className="text-sm text-gray-700">{a.descricao}</p>
                   </div>
                   <button
-                    onClick={() => delAcomp.mutate(a.id)}
+                    onClick={() => setConfirmarDeleteAcomp(a.id)}
                     className="text-xs text-red-500 hover:text-red-700 ml-4"
                   >
                     Excluir
@@ -232,6 +245,14 @@ export default function ChamadoDetail() {
           </button>
         </form>
       </div>
+      <ConfirmDialog
+        isOpen={confirmarDeleteAcomp !== null}
+        title="Excluir acompanhamento"
+        message="Deseja excluir este acompanhamento? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        onConfirm={() => { delAcomp.mutate(confirmarDeleteAcomp!); setConfirmarDeleteAcomp(null) }}
+        onCancel={() => setConfirmarDeleteAcomp(null)}
+      />
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getChamados } from '../api/chamados'
 import { getResponsaveis } from '../api/responsaveis'
 import { ChamadoStatus, ChamadoPrioridade } from '../types'
+import Spinner from '../components/ui/Spinner'
 
 const statusColors: Record<number, string> = {
   1: 'bg-blue-100 text-blue-800',
@@ -25,9 +26,7 @@ export default function Dashboard() {
   const contarPorStatus = (status: number) => chamados.filter((c) => c.status === status).length
   const contarPorPrioridade = (prioridade: number) => chamados.filter((c) => c.prioridade === prioridade).length
 
-  if (loadingChamados) {
-    return <div className="text-gray-500 text-sm">Carregando...</div>
-  }
+  if (loadingChamados) return <Spinner />
 
   return (
     <div className="space-y-8">
