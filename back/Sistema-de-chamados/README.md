@@ -122,14 +122,20 @@ dotnet run
 A API ficará disponível em:
 
 ```text
-http://localhost:5000
-https://localhost:5001
+http://localhost:5012
+https://localhost:7122
 ```
 
-A documentação interativa (Swagger/OpenAPI) estará em:
+A documentação interativa (Scalar UI) estará em:
 
 ```text
-http://localhost:5000/openapi/v1.json
+http://localhost:5012/scalar/v1
+```
+
+O JSON bruto do OpenAPI estará em:
+
+```text
+http://localhost:5012/openapi/v1.json
 ```
 
 ---
